@@ -1,7 +1,9 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import WeatherDashboardView from '@/views/WeatherDashboardView.vue'
+</script>
 
 <template>
-  <h1 className="text-3xl text-center mt-4 font-bold underline">Hello world!</h1>
+  <WeatherDashboardView />
 </template>
 
 <style scoped></style>
