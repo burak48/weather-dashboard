@@ -16,7 +16,10 @@
         </button>
       </div>
 
-      <div>
+      <div v-if="loading" class="flex justify-center items-center">
+        <LoadingSpinner />
+      </div>
+      <div v-else>
         <div v-if="weather.name">
           <h1 class="text-2xl font-semibold">{{ weather?.name }}</h1>
           <div class="flex items-center mt-2">
@@ -38,19 +41,27 @@
           <p class="mt-2">{{ weather?.weather?.[0]?.description }}</p>
         </div>
       </div>
+      <ErrorMessage v-if="isError" :message="errorMessage" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import ErrorMessage from '@/components/ErrorMessage.vue'
 import { ref } from 'vue'
 import axios from 'axios'
 
+const loading = ref(false)
+const isError = ref(false)
+const errorMessage = ref('')
 const city = ref('')
 const weather = ref({})
 const temperatureUnit = ref('C')
 
 const searchWeather = async () => {
+  isError.value = false
+  loading.value = true
   if (!city.value) return
   try {
     const response = await axios.get(
@@ -60,7 +71,11 @@ const searchWeather = async () => {
     )
     weather.value = response.data
   } catch (error: any) {
+    isError.value = true
     console.error(error)
+    errorMessage.value = error.message
+  } finally {
+    loading.value = false
   }
 }
 
