@@ -20,7 +20,7 @@
         <LoadingSpinner />
       </div>
       <div v-else>
-        <div v-if="weather.name">
+        <div v-if="weather.name" class="flex flex-col justify-center items-center mt-4">
           <h1 class="text-2xl font-semibold">{{ weather?.name }}</h1>
           <div class="flex items-center mt-2">
             <button
@@ -37,8 +37,33 @@
             :src="getWeatherIconUrl(weather?.weather?.[0]?.icon)"
             :alt="weather?.weather?.[0]?.main"
             class="mt-4"
+            width="64"
+            height="64"
           />
           <p class="mt-2">{{ weather?.weather?.[0]?.description }}</p>
+        </div>
+
+        <div v-if="forecastData.length > 0" class="mt-4">
+          <h2 class="text-xl font-semibold text-center md:text-start">3-Day Forecast</h2>
+          <div
+            class="flex flex-col md:flex-row justify-center border-solid border-2 border-black mt-4"
+          >
+            <div
+              v-for="(day, index) in forecastData"
+              :key="index"
+              class="p-4 text-center flex flex-col justify-center items-center"
+            >
+              <p>{{ new Date(day.dt * 1000).toDateString() }}</p>
+              <img
+                :src="getWeatherIconUrl(day.weather[0].icon)"
+                :alt="day.weather[0].main"
+                width="48"
+                height="48"
+              />
+              <p>{{ day.weather[0].description }}</p>
+              <p>{{ day.main.temp }}°{{ temperatureUnit }}</p>
+            </div>
+          </div>
         </div>
       </div>
       <ErrorMessage v-if="isError" :message="errorMessage" />
@@ -56,8 +81,47 @@ const loading = ref(false)
 const isError = ref(false)
 const errorMessage = ref('')
 const city = ref('')
-const weather = ref({})
 const temperatureUnit = ref('C')
+const weather: any = ref({})
+
+type Forecast = {
+  dt: any
+  dt_txt: string
+  weather: [
+    {
+      id: number
+      icon: string
+      main: string
+      description: string
+    }
+  ]
+  main: {
+    temp: number
+    feels_like: number
+    temp_min: number
+    temp_max: number
+    pressure: number
+    sea_level: number
+    grnd_level: number
+    humidity: number
+    temp_kf: number
+  }
+  clouds: {
+    all: number
+  }
+  wind: {
+    speed: number
+    deg: number
+    gust: number
+  }
+  visibility: number
+  pop: number
+  sys: {
+    pod: string
+  }
+}
+
+const forecastData = ref<Forecast[]>([])
 
 const searchWeather = async () => {
   isError.value = false
@@ -69,6 +133,23 @@ const searchWeather = async () => {
         temperatureUnit.value === 'C' ? 'metric' : 'imperial'
       }&appid=${import.meta.env.VITE_APP_API_KEY}`
     )
+
+    // Fetch 3-day forecast data
+    const forecastResponse: any = await axios.get(
+      `${import.meta.env.VITE_APP_BASE_URL}/data/2.5/forecast?q=${city.value}&units=${
+        temperatureUnit.value === 'C' ? 'metric' : 'imperial'
+      }&appid=${import.meta.env.VITE_APP_API_KEY}`
+    )
+
+    const itemsToCollect = 3
+
+    for (let i = 8; i < forecastResponse.data.list.length; i = i + 8) {
+      forecastData.value.push(forecastResponse.data.list[i])
+      if (forecastData.value.length === itemsToCollect) {
+        break
+      }
+    }
+
     weather.value = response.data
   } catch (error: any) {
     isError.value = true
