@@ -16,57 +16,60 @@
         </button>
       </div>
 
-      <div v-if="loading" class="flex justify-center items-center">
-        <LoadingSpinner />
-      </div>
-      <div v-else>
-        <div v-if="weather.name" class="flex flex-col justify-center items-center mt-4">
-          <h1 class="text-2xl font-semibold">{{ weather?.name }}</h1>
-          <div class="flex items-center mt-2">
-            <button
-              @click="toggleTemperatureUnit"
-              class="px-2 py-1 bg-blue-500 text-white rounded-lg"
-            >
-              {{ temperatureUnit }}
-            </button>
-            <p class="text-4xl font-semibold ml-4">
-              {{ weather?.main?.temp }}°{{ temperatureUnit }}
-            </p>
-          </div>
-          <img
-            :src="getWeatherIconUrl(weather?.weather?.[0]?.icon)"
-            :alt="weather?.weather?.[0]?.main"
-            class="mt-4"
-            width="64"
-            height="64"
-          />
-          <p class="mt-2">{{ weather?.weather?.[0]?.description }}</p>
-        </div>
+      <ErrorMessage v-if="isError" :message="errorMessage" />
 
-        <div v-if="forecastData.length > 0" class="mt-4">
-          <h2 class="text-xl font-semibold text-center md:text-start">3-Day Forecast</h2>
-          <div
-            class="flex flex-col md:flex-row justify-center border-solid border-2 border-black mt-4"
-          >
+      <div v-if="!isError">
+        <div v-if="loading" class="flex justify-center items-center">
+          <LoadingSpinner />
+        </div>
+        <div v-else>
+          <div v-if="weather.name" class="flex flex-col justify-center items-center mt-4">
+            <h1 class="text-2xl font-semibold">{{ weather?.name }}</h1>
+            <div class="flex items-center mt-2">
+              <button
+                @click="toggleTemperatureUnit"
+                class="px-2 py-1 bg-blue-500 text-white rounded-lg"
+              >
+                {{ temperatureUnit }}
+              </button>
+              <p class="text-4xl font-semibold ml-4">
+                {{ weather?.main?.temp }}°{{ temperatureUnit }}
+              </p>
+            </div>
+            <img
+              :src="getWeatherIconUrl(weather?.weather?.[0]?.icon)"
+              :alt="weather?.weather?.[0]?.main"
+              class="mt-4"
+              width="64"
+              height="64"
+            />
+            <p class="mt-2">{{ weather?.weather?.[0]?.description }}</p>
+          </div>
+
+          <div v-if="forecastData.length > 0" class="mt-4">
+            <h2 class="text-xl font-semibold text-center md:text-start">3-Day Forecast</h2>
             <div
-              v-for="(day, index) in forecastData"
-              :key="index"
-              class="p-4 text-center flex flex-col justify-center items-center"
+              class="flex flex-col md:flex-row justify-center border-solid border-2 border-black mt-4"
             >
-              <p>{{ new Date(day.dt * 1000).toDateString() }}</p>
-              <img
-                :src="getWeatherIconUrl(day.weather[0].icon)"
-                :alt="day.weather[0].main"
-                width="48"
-                height="48"
-              />
-              <p>{{ day.weather[0].description }}</p>
-              <p>{{ day.main.temp }}°{{ temperatureUnit }}</p>
+              <div
+                v-for="(day, index) in forecastData"
+                :key="index"
+                class="p-4 text-center flex flex-col justify-center items-center"
+              >
+                <p>{{ new Date(day.dt * 1000).toDateString() }}</p>
+                <img
+                  :src="getWeatherIconUrl(day.weather[0].icon)"
+                  :alt="day.weather[0].main"
+                  width="48"
+                  height="48"
+                />
+                <p>{{ day.weather[0].description }}</p>
+                <p>{{ day.main.temp }}°{{ temperatureUnit }}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <ErrorMessage v-if="isError" :message="errorMessage" />
     </div>
   </div>
 </template>
@@ -123,22 +126,25 @@ type Forecast = {
 
 const forecastData = ref<Forecast[]>([])
 
+const BASE_URL = import.meta.env.VITE_APP_BASE_URL
+const API_KEY = import.meta.env.VITE_APP_API_KEY
+
 const searchWeather = async () => {
   isError.value = false
   loading.value = true
   if (!city.value) return
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_APP_BASE_URL}/data/2.5/weather?q=${city.value}&units=${
+      `${BASE_URL}/data/2.5/weather?q=${city.value}&units=${
         temperatureUnit.value === 'C' ? 'metric' : 'imperial'
-      }&appid=${import.meta.env.VITE_APP_API_KEY}`
+      }&appid=${API_KEY}`
     )
 
     // Fetch 3-day forecast data
     const forecastResponse: any = await axios.get(
-      `${import.meta.env.VITE_APP_BASE_URL}/data/2.5/forecast?q=${city.value}&units=${
+      `${BASE_URL}/data/2.5/forecast?q=${city.value}&units=${
         temperatureUnit.value === 'C' ? 'metric' : 'imperial'
-      }&appid=${import.meta.env.VITE_APP_API_KEY}`
+      }&appid=${API_KEY}`
     )
 
     const itemsToCollect = 3
@@ -149,12 +155,12 @@ const searchWeather = async () => {
         break
       }
     }
-
     weather.value = response.data
   } catch (error: any) {
     isError.value = true
     console.error(error)
     errorMessage.value = error.message
+    forecastData.value = []
   } finally {
     loading.value = false
   }
@@ -162,11 +168,14 @@ const searchWeather = async () => {
 
 const toggleTemperatureUnit = () => {
   temperatureUnit.value = temperatureUnit.value === 'C' ? 'F' : 'C'
-  if (city.value) searchWeather()
+  if (city.value) {
+    forecastData.value = []
+    searchWeather()
+  }
 }
 
 const getWeatherIconUrl = (icon: any) => {
-  return `${import.meta.env.VITE_APP_BASE_URL}/img/w/${icon}.png`
+  return `${BASE_URL}/img/w/${icon}.png`
 }
 </script>
 
