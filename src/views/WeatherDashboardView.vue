@@ -71,12 +71,14 @@
 <script setup lang="ts">
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
+// import { ref, onMounted, computed, watch } from 'vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTodayWeather, getThreeDaysWeather, getWeatherIconUrl } from '@/api/index'
 
 const router = useRouter()
 const { city } = defineProps(['city'])
+// const city = useRoute().query.city as string
 
 const loading = ref(false)
 const isError = ref(false)
@@ -124,7 +126,7 @@ type Forecast = {
 const forecastData = ref<Forecast[]>([])
 
 const isAlphabetic = (input: string) => {
-  const cleanedInput = input.replace(/%20/g, ' ')
+  const cleanedInput = input?.replace(/%20/g, ' ')
   return /^[A-Za-z\s]+$/.test(cleanedInput)
 }
 
@@ -133,7 +135,7 @@ const fetchWeatherData = async () => {
   loading.value = true
   forecastData.value = []
 
-  const modifiedCity = city.replace(' ', '%20')
+  const modifiedCity = city?.replace(' ', '%20')
   const searchCity = modifiedCity || getLastSearchedCity()
 
   if (!searchCity || !isAlphabetic(searchCity)) {
@@ -169,6 +171,10 @@ const fetchWeatherData = async () => {
 
 onMounted(() => {
   fetchWeatherData()
+  const lastSearchedCity = getLastSearchedCity()
+  if (lastSearchedCity) {
+    router.replace({ name: 'dashboard', query: { city: lastSearchedCity } })
+  }
 })
 
 const toggleTemperatureUnit = () => {
@@ -204,6 +210,15 @@ const setLastSearchedCity = (city: string) => {
 const getLastSearchedCity = () => {
   return localStorage.getItem('lastSearchedCity') || ''
 }
+
+// watch(
+//   () => city,
+//   (newCity, oldCity) => {
+//     if (newCity !== oldCity) {
+//       fetchWeatherData()
+//     }
+//   }
+// )
 </script>
 
 <style scoped></style>
