@@ -131,15 +131,18 @@ const fetchWeatherData = async () => {
   isError.value = false
   loading.value = true
   forecastData.value = []
-  if (!city || !isAlphabetic(city)) {
+
+  const searchCity = city || getLastSearchedCity()
+
+  if (!searchCity || !isAlphabetic(searchCity)) {
     isError.value = true
     errorMessage.value = 'The city is not found'
     loading.value = false
     return
   }
   try {
-    const todayResponse = await getTodayWeather(city, temperatureUnit)
-    const forecastResponse: any = await getThreeDaysWeather(city, temperatureUnit)
+    const todayResponse = await getTodayWeather(searchCity, temperatureUnit)
+    const forecastResponse: any = await getThreeDaysWeather(searchCity, temperatureUnit)
 
     const itemsToCollect = 3
 
@@ -150,6 +153,8 @@ const fetchWeatherData = async () => {
       }
     }
     weather.value = todayResponse
+
+    setLastSearchedCity(searchCity)
   } catch (error: any) {
     isError.value = true
     console.error(error)
@@ -166,10 +171,10 @@ onMounted(() => {
 
 const toggleTemperatureUnit = () => {
   temperatureUnit.value = temperatureUnit.value === 'C' ? 'F' : 'C'
-  if (city) {
-    forecastData.value = []
-    fetchWeatherData()
-  }
+  // if (city) {
+  forecastData.value = []
+  fetchWeatherData()
+  // }
 }
 
 const goToSearch = () => {
@@ -178,7 +183,7 @@ const goToSearch = () => {
 
 const weatherBackgroundClass = computed(() => {
   if (weather.value?.weather?.[0]?.main) {
-    console.log("weather.value?.weather? ", weather.value?.weather)
+    console.log('weather.value?.weather? ', weather.value?.weather)
     const weatherCondition = weather.value.weather[0].main.toLowerCase()
     if (weatherCondition.includes('sunny') || weatherCondition.includes('clear')) {
       return 'bg-yellow-200'
@@ -190,6 +195,14 @@ const weatherBackgroundClass = computed(() => {
   }
   return 'bg-blue-200'
 })
+
+const setLastSearchedCity = (city: string) => {
+  localStorage.setItem('lastSearchedCity', city)
+}
+
+const getLastSearchedCity = () => {
+  return localStorage.getItem('lastSearchedCity') || ''
+}
 </script>
 
 <style scoped></style>
