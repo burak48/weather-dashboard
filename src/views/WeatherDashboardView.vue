@@ -183,7 +183,6 @@ const goToSearch = () => {
 
 const weatherBackgroundClass = computed(() => {
   if (weather.value?.weather?.[0]?.main) {
-    console.log('weather.value?.weather? ', weather.value?.weather)
     const weatherCondition = weather.value.weather[0].main.toLowerCase()
     if (weatherCondition.includes('sunny') || weatherCondition.includes('clear')) {
       return 'bg-yellow-200'
