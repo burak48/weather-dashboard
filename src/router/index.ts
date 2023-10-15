@@ -14,7 +14,7 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: WeatherDashboardView,
-      props: true
+      props: route => ({ city: route.query.city }),
     }
   ]
 })

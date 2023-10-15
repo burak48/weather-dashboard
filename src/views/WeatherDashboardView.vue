@@ -72,11 +72,11 @@
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
 import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { getTodayWeather, getThreeDaysWeather, getWeatherIconUrl } from '@/api/index'
 
 const router = useRouter()
-const city = useRoute().query.city as string
+const { city } = defineProps(['city'])
 
 const loading = ref(false)
 const isError = ref(false)
@@ -124,7 +124,8 @@ type Forecast = {
 const forecastData = ref<Forecast[]>([])
 
 const isAlphabetic = (input: string) => {
-  return /^[A-Za-z]+$/.test(input)
+  const cleanedInput = input.replace(/%20/g, ' ')
+  return /^[A-Za-z\s]+$/.test(cleanedInput)
 }
 
 const fetchWeatherData = async () => {
@@ -132,7 +133,8 @@ const fetchWeatherData = async () => {
   loading.value = true
   forecastData.value = []
 
-  const searchCity = city || getLastSearchedCity()
+  const modifiedCity = city.replace(' ', '%20')
+  const searchCity = modifiedCity || getLastSearchedCity()
 
   if (!searchCity || !isAlphabetic(searchCity)) {
     isError.value = true
