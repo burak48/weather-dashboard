@@ -1,5 +1,8 @@
 <template>
-  <div class="bg-blue-200 min-h-screen flex flex-col items-center justify-center">
+  <div
+    class="min-h-screen flex flex-col items-center justify-center"
+    :class="weatherBackgroundClass"
+  >
     <div class="p-6 rounded-lg shadow-lg bg-white">
       <ErrorMessage v-if="isError" :message="errorMessage" />
       <div v-if="!isError">
@@ -17,7 +20,7 @@
                 {{ temperatureUnit }}
               </button>
               <p class="text-4xl font-semibold ml-4">
-                {{ weather?.main?.temp }}°{{ temperatureUnit }}
+                {{ Math.ceil(weather?.main?.temp) }}°{{ temperatureUnit }}
               </p>
             </div>
             <img
@@ -48,7 +51,7 @@
                   height="48"
                 />
                 <p>{{ day.weather[0].description }}</p>
-                <p>{{ day.main.temp }}°{{ temperatureUnit }}</p>
+                <p>{{ Math.ceil(day.main.temp) }}°{{ temperatureUnit }}</p>
               </div>
             </div>
           </div>
@@ -68,12 +71,12 @@
 <script setup lang="ts">
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { getTodayWeather, getThreeDaysWeather, getWeatherIconUrl } from '@/api/index'
 
 const router = useRouter()
-const city = useRoute().query.city
+const city = useRoute().query.city as string
 
 const loading = ref(false)
 const isError = ref(false)
@@ -120,10 +123,7 @@ type Forecast = {
 
 const forecastData = ref<Forecast[]>([])
 
-const BASE_URL = import.meta.env.VITE_APP_BASE_URL
-const API_KEY = import.meta.env.VITE_APP_API_KEY
-
-const isAlphabetic = (input: any) => {
+const isAlphabetic = (input: string) => {
   return /^[A-Za-z]+$/.test(input)
 }
 
@@ -138,28 +138,18 @@ const fetchWeatherData = async () => {
     return
   }
   try {
-    const response = await axios.get(
-      `${BASE_URL}/data/2.5/weather?q=${city}&units=${
-        temperatureUnit.value === 'C' ? 'metric' : 'imperial'
-      }&appid=${API_KEY}`
-    )
-
-    // Fetch 3-day forecast data
-    const forecastResponse: any = await axios.get(
-      `${BASE_URL}/data/2.5/forecast?q=${city}&units=${
-        temperatureUnit.value === 'C' ? 'metric' : 'imperial'
-      }&appid=${API_KEY}`
-    )
+    const todayResponse = await getTodayWeather(city, temperatureUnit)
+    const forecastResponse: any = await getThreeDaysWeather(city, temperatureUnit)
 
     const itemsToCollect = 3
 
-    for (let i = 8; i < forecastResponse.data.list.length; i = i + 8) {
-      forecastData.value.push(forecastResponse.data.list[i])
+    for (let i = 8; i < forecastResponse.list.length; i = i + 8) {
+      forecastData.value.push(forecastResponse.list[i])
       if (forecastData.value.length === itemsToCollect) {
         break
       }
     }
-    weather.value = response.data
+    weather.value = todayResponse
   } catch (error: any) {
     isError.value = true
     console.error(error)
@@ -182,13 +172,24 @@ const toggleTemperatureUnit = () => {
   }
 }
 
-const getWeatherIconUrl = (icon: any) => {
-  return `${BASE_URL}/img/w/${icon}.png`
-}
-
 const goToSearch = () => {
   router.push({ name: 'home' })
 }
+
+const weatherBackgroundClass = computed(() => {
+  if (weather.value?.weather?.[0]?.main) {
+    console.log("weather.value?.weather? ", weather.value?.weather)
+    const weatherCondition = weather.value.weather[0].main.toLowerCase()
+    if (weatherCondition.includes('sunny') || weatherCondition.includes('clear')) {
+      return 'bg-yellow-200'
+    } else if (weatherCondition.includes('rain')) {
+      return 'bg-blue-800'
+    } else if (weatherCondition.includes('snow')) {
+      return 'bg-gray-300'
+    }
+  }
+  return 'bg-blue-200'
+})
 </script>
 
 <style scoped></style>
