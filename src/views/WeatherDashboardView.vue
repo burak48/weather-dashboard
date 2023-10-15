@@ -129,10 +129,20 @@ const forecastData = ref<Forecast[]>([])
 const BASE_URL = import.meta.env.VITE_APP_BASE_URL
 const API_KEY = import.meta.env.VITE_APP_API_KEY
 
+const isAlphabetic = (input: string) => {
+  return /^[A-Za-z]+$/.test(input);
+}
+
 const searchWeather = async () => {
   isError.value = false
   loading.value = true
-  if (!city.value) return
+  forecastData.value = []
+  if (!city.value || !isAlphabetic(city.value)) {
+    isError.value = true;
+    errorMessage.value = "The city is not found";
+    loading.value = false;
+    return;
+  }
   try {
     const response = await axios.get(
       `${BASE_URL}/data/2.5/weather?q=${city.value}&units=${
