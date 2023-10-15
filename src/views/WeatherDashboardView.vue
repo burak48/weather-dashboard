@@ -1,23 +1,7 @@
 <template>
   <div class="bg-blue-200 min-h-screen flex flex-col items-center justify-center">
     <div class="p-6 rounded-lg shadow-lg bg-white">
-      <div class="flex flex-col md:flex-row">
-        <input
-          v-model="city"
-          type="text"
-          placeholder="Enter city name"
-          class="px-4 py-2 border rounded-lg w-full md:mr-2"
-        />
-        <button
-          @click="searchWeather"
-          class="px-4 py-2 bg-blue-500 text-white rounded-lg w-full md:w-auto mt-2 md:mt-0"
-        >
-          Search
-        </button>
-      </div>
-
       <ErrorMessage v-if="isError" :message="errorMessage" />
-
       <div v-if="!isError">
         <div v-if="loading" class="flex justify-center items-center">
           <LoadingSpinner />
@@ -70,6 +54,13 @@
           </div>
         </div>
       </div>
+      <button
+        v-if="!loading"
+        @click="goToSearch"
+        class="flex justify-center items-center w-full mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none"
+      >
+        Search for new city
+      </button>
     </div>
   </div>
 </template>
@@ -77,13 +68,16 @@
 <script setup lang="ts">
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { useRoute, useRouter } from 'vue-router'
+
+const router = useRouter()
+const city = useRoute().query.city
 
 const loading = ref(false)
 const isError = ref(false)
 const errorMessage = ref('')
-const city = ref('')
 const temperatureUnit = ref('C')
 const weather: any = ref({})
 
@@ -129,30 +123,30 @@ const forecastData = ref<Forecast[]>([])
 const BASE_URL = import.meta.env.VITE_APP_BASE_URL
 const API_KEY = import.meta.env.VITE_APP_API_KEY
 
-const isAlphabetic = (input: string) => {
-  return /^[A-Za-z]+$/.test(input);
+const isAlphabetic = (input: any) => {
+  return /^[A-Za-z]+$/.test(input)
 }
 
-const searchWeather = async () => {
+const fetchWeatherData = async () => {
   isError.value = false
   loading.value = true
   forecastData.value = []
-  if (!city.value || !isAlphabetic(city.value)) {
-    isError.value = true;
-    errorMessage.value = "The city is not found";
-    loading.value = false;
-    return;
+  if (!city || !isAlphabetic(city)) {
+    isError.value = true
+    errorMessage.value = 'The city is not found'
+    loading.value = false
+    return
   }
   try {
     const response = await axios.get(
-      `${BASE_URL}/data/2.5/weather?q=${city.value}&units=${
+      `${BASE_URL}/data/2.5/weather?q=${city}&units=${
         temperatureUnit.value === 'C' ? 'metric' : 'imperial'
       }&appid=${API_KEY}`
     )
 
     // Fetch 3-day forecast data
     const forecastResponse: any = await axios.get(
-      `${BASE_URL}/data/2.5/forecast?q=${city.value}&units=${
+      `${BASE_URL}/data/2.5/forecast?q=${city}&units=${
         temperatureUnit.value === 'C' ? 'metric' : 'imperial'
       }&appid=${API_KEY}`
     )
@@ -176,16 +170,24 @@ const searchWeather = async () => {
   }
 }
 
+onMounted(() => {
+  fetchWeatherData()
+})
+
 const toggleTemperatureUnit = () => {
   temperatureUnit.value = temperatureUnit.value === 'C' ? 'F' : 'C'
-  if (city.value) {
+  if (city) {
     forecastData.value = []
-    searchWeather()
+    fetchWeatherData()
   }
 }
 
 const getWeatherIconUrl = (icon: any) => {
   return `${BASE_URL}/img/w/${icon}.png`
+}
+
+const goToSearch = () => {
+  router.push({ name: 'home' })
 }
 </script>
 

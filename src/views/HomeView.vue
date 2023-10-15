@@ -1,9 +1,15 @@
+<template>
+  <div class="bg-blue-200 min-h-screen flex flex-col items-center justify-center">
+    <div class="p-6 rounded-lg shadow-lg bg-white">
+      <div class="flex flex-col md:flex-row">
+        <SearchBar />
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
+import SearchBar from '@/components/SearchBar.vue'
 </script>
 
-<template>
-  <main>
-    <TheWelcome />
-  </main>
-</template>
+<style scoped></style>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import WeatherDashboardView from '@/views/WeatherDashboardView.vue'
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <WeatherDashboardView />
+  <RouterView />
 </template>
 
 <style scoped></style>
