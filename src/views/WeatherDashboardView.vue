@@ -10,8 +10,8 @@
           <LoadingSpinner />
         </div>
         <div v-else>
-          <div v-if="weather.name" class="flex flex-col justify-center items-center mt-4">
-            <h1 class="text-2xl font-semibold">{{ weather?.name }}</h1>
+          <div v-if="weather.city" class="flex flex-col justify-center items-center mt-4">
+            <h1 class="text-2xl font-semibold">{{ weather?.city }}</h1>
             <div class="flex items-center mt-2">
               <button
                 @click="toggleTemperatureUnit"
@@ -71,14 +71,12 @@
 <script setup lang="ts">
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ErrorMessage from '@/components/ErrorMessage.vue'
-// import { ref, onMounted, computed, watch } from 'vue'
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getTodayWeather, getThreeDaysWeather, getWeatherIconUrl } from '@/api/index'
+import { getFourDaysWeather, getWeatherIconUrl } from '@/api/index'
 
 const router = useRouter()
 const { city } = defineProps(['city'])
-// const city = useRoute().query.city as string
 
 const loading = ref(false)
 const isError = ref(false)
@@ -145,18 +143,23 @@ const fetchWeatherData = async () => {
     return
   }
   try {
-    const todayResponse = await getTodayWeather(searchCity, temperatureUnit)
-    const forecastResponse: any = await getThreeDaysWeather(searchCity, temperatureUnit)
+    const forecastResponse: any = await getFourDaysWeather(searchCity, temperatureUnit)
+    const itemsToCollect = 4
 
-    const itemsToCollect = 3
-
-    for (let i = 8; i < forecastResponse.list.length; i = i + 8) {
+    for (let i = 0; i < forecastResponse.list.length; i = i + 8) {
       forecastData.value.push(forecastResponse.list[i])
+      forecastResponse.list[i]["city"] = forecastResponse.city.name
       if (forecastData.value.length === itemsToCollect) {
         break
       }
     }
-    weather.value = todayResponse
+    
+    if (forecastData.value.length > 0) {
+      weather.value = forecastData.value[0];
+      forecastData.value.shift();
+    } else {
+      console.log("The array is empty.");
+    }
 
     setLastSearchedCity(searchCity)
   } catch (error: any) {
@@ -171,18 +174,12 @@ const fetchWeatherData = async () => {
 
 onMounted(() => {
   fetchWeatherData()
-  const lastSearchedCity = getLastSearchedCity()
-  if (lastSearchedCity) {
-    router.replace({ name: 'dashboard', query: { city: lastSearchedCity } })
-  }
 })
 
 const toggleTemperatureUnit = () => {
   temperatureUnit.value = temperatureUnit.value === 'C' ? 'F' : 'C'
-  // if (city) {
   forecastData.value = []
   fetchWeatherData()
-  // }
 }
 
 const goToSearch = () => {
@@ -210,15 +207,6 @@ const setLastSearchedCity = (city: string) => {
 const getLastSearchedCity = () => {
   return localStorage.getItem('lastSearchedCity') || ''
 }
-
-// watch(
-//   () => city,
-//   (newCity, oldCity) => {
-//     if (newCity !== oldCity) {
-//       fetchWeatherData()
-//     }
-//   }
-// )
 </script>
 
 <style scoped></style>
