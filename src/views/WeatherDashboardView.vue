@@ -35,23 +35,24 @@
 
           <div v-if="forecastData.length > 0" class="mt-4">
             <h2 class="text-xl font-semibold text-center md:text-start">3-Day Forecast</h2>
-            <div
-              class="flex flex-col md:flex-row justify-center border-solid border-2 border-black mt-4"
-            >
-              <div
-                v-for="(day, index) in forecastData"
-                :key="index"
-                class="p-4 text-center flex flex-col justify-center items-center"
-              >
-                <p>{{ new Date(day.dt * 1000).toDateString() }}</p>
-                <img
-                  :src="getWeatherIconUrl(day.weather[0].icon)"
-                  :alt="day.weather[0].main"
-                  width="48"
-                  height="48"
-                />
-                <p>{{ day.weather[0].description }}</p>
-                <p>{{ Math.ceil(day.main.temp) }}°{{ temperatureUnit }}</p>
+            <div class="h-48 overflow-y-auto">
+              <div class="flex flex-col md:flex-row justify-center mt-4">
+                <div
+                  v-for="(day, index) in forecastData"
+                  :key="index"
+                  class="p-4 text-center flex flex-col justify-center items-center border-solid border-2 border-black mb-1 md:mr-1"
+                >
+                  <!-- <p>{{ new Date(day.dt * 1000).toDateString() }}</p> -->
+                  <p>{{ formatDate(day.dt_txt) }}</p>
+                  <img
+                    :src="getWeatherIconUrl(day.weather[0].icon)"
+                    :alt="day.weather[0].main"
+                    width="48"
+                    height="48"
+                  />
+                  <p>{{ day.weather[0].description }}</p>
+                  <p>{{ Math.ceil(day.main.temp) }}°{{ temperatureUnit }}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -153,7 +154,7 @@ const fetchWeatherData = async () => {
         break
       }
     }
-    
+
     if (forecastData.value.length > 0) {
       weather.value = forecastData.value[0];
       forecastData.value.shift();
@@ -206,6 +207,12 @@ const setLastSearchedCity = (city: string) => {
 
 const getLastSearchedCity = () => {
   return localStorage.getItem('lastSearchedCity') || ''
+}
+
+const formatDate = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const options: any = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+  return date.toLocaleDateString(undefined, options);
 }
 </script>
 
